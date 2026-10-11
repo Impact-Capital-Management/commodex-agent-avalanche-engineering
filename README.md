@@ -17,7 +17,7 @@ Avalanche engineering agent for the Commodex Avalanche C-Chain setup. Commodex: 
 
 ## Status — 11 October 2026
 
-**Design fixed; app integration not started. Nothing mined yet.**
+**App integration live on staging (release ed1f75f, 2026-10-11): the corridor app anchors ledger heads, Pool-to-Pool match roots and remittance receipts on Fuji.**
 
 What the Commodex app already does (on staging and production):
 
@@ -37,9 +37,9 @@ The contract and the operator script live in [commodex-agent-avalanche-contracts
 
 | Step | Transaction | Explorer |
 |---|---|---|
-| Ledger head anchored from staging | — not yet mined — | |
-| Pool-to-Pool root anchored | — not yet mined — | |
-| Dues remittance anchored | — not yet mined — | |
+| Ledger head anchored from staging (`tax` stream, event #96) | `0x3a1c5d0093de40c1…` block 59309310 | https://testnet.snowtrace.io/tx/0x3a1c5d0093de40c15deed22f9a568c0a1b2ad04f66f5ae084771583c69e45ac9 |
+| Pool-to-Pool root anchored (P2P-REHEARSAL-001, 12 buyers) | `0x54a4a46708d4bbdd…` block 59309318 | https://testnet.snowtrace.io/tx/0x54a4a46708d4bbdd641f9f4f14fb88c085f2af29d35295834f4d6caab4ec38e6 |
+| Dues remittance anchored | — next: first remittance marked remitted on staging — | |
 
 ## License
 
