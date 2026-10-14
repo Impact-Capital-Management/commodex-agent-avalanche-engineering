@@ -4,6 +4,7 @@ Avalanche engineering agent for the Commodex Avalanche C-Chain setup. Commodex: 
 
 - Production: https://commodex.xyz
 - Testnet UI: https://wedevnext.commodex.xyz
+- Fuji evidence page on the testnet UI: https://wedevnext.commodex.xyz/fuji
 - Network: Avalanche Fuji C-Chain (EVM), chain id `43113`
 
 ## Agent
@@ -13,33 +14,50 @@ Avalanche engineering agent for the Commodex Avalanche C-Chain setup. Commodex: 
 | Person | Aleksander Wiśniewski |
 | Role | Avalanche engineering — connects the Commodex app to the Fuji contracts |
 | FR scope | FR-01, FR-03 |
-| Squad page | https://team.impactcapital.ltd/showcase/commodex/ |
+| Squad page | https://team.impactcapital.ltd/showcase/commodex/agents/blockchain_engineer/ |
 
-## Status — 11 October 2026
+## Status — 14 October 2026
 
-**App integration live on staging (release ed1f75f, 2026-10-11): the corridor app anchors ledger heads, Pool-to-Pool match roots and remittance receipts on Fuji.**
+**The Commodex app anchors corridor records on Fuji from the testnet UI (https://wedevnext.commodex.xyz).** The app
+code that does it is in [`app/`](app/), copied unchanged from the Commodex app.
 
-What the Commodex app already does (on staging and production):
+| File | What it does |
+|---|---|
+| [`app/anchor.ts`](app/anchor.ts) | Pure rules: the four anchor kinds, bytes32 checks, safe `ref`, call encoding, production guard, fee and gas headroom |
+| [`app/anchor.test.ts`](app/anchor.test.ts) | 7 tests for those rules (`npm test`) |
+| [`app/anchor-service.ts`](app/anchor-service.ts) | Signs and sends `anchor(hash, kind, ref)` with the server operator wallet, waits for the receipt, files a `chain.anchored` event into the same ledger stream. One anchor at a time (serial nonce). Never throws into a settlement. |
+| [`app/AnchorPanel.tsx`](app/AnchorPanel.tsx) | Operator console panel: contract, operator wallet, balance, recent anchors with explorer links, buttons to anchor a test hash, a ledger head and a Pool-to-Pool root |
 
-- Every corridor record is a SHA-256 hash-chained ledger event (`prevHash` → `hash`) per stream.
-- At settlement and remittance it reads the latest Avalanche block (read-only) and stores the block number and hash in the ledger event — a public time witness, no transaction.
-- Pool-to-Pool matches produce a `matchHash` that commits to the seller pool, the buyer pool and a Merkle root of buyer positions.
+Where the app calls it: at settlement (ledger head of the order stream), at remittance (dues remittance digest),
+and from the operator console. Production refuses to anchor unless `CDX_ANCHOR_ALLOW_PRODUCTION=true`.
 
-What this unit builds next, in order (see [docs/what-gets-anchored.md](docs/what-gets-anchored.md)):
+What gets anchored and why no personal data reaches the chain: [docs/what-gets-anchored.md](docs/what-gets-anchored.md).
+The contract and the operator script: [commodex-agent-avalanche-contracts](https://github.com/Impact-Capital-Management/commodex-agent-avalanche-contracts).
 
-1. Ledger head anchor (`LEDGER_HEAD`) from staging, tx hash written back as a ledger event.
-2. Pool-to-Pool match anchor (`P2P_ROOT`); each buyer verifies their share against the anchored root.
-3. Statutory-dues remittance anchor (`DUES_REMITTANCE`), shown to the public authority.
+## Commands
 
-The contract and the operator script live in [commodex-agent-avalanche-contracts](https://github.com/Impact-Capital-Management/commodex-agent-avalanche-contracts).
+```bash
+git clone https://github.com/Impact-Capital-Management/commodex-agent-avalanche-engineering
+cd commodex-agent-avalanche-engineering
+npm install
+npm test          # 7 checks of app/anchor.ts, no network, no key (Node 22.6 or newer)
+```
+
+Check the anchors the app wrote, against the public Fuji RPC, with no install:
+
+```bash
+git clone https://github.com/Impact-Capital-Management/commodex-agent-contract-assurance
+node commodex-agent-contract-assurance/checks/verify-fuji.mjs      # prints PASS/FAIL per transaction
+```
 
 ## Evidence
 
 | Step | Transaction | Explorer |
 |---|---|---|
-| Ledger head anchored from staging (`tax` stream, event #96) | `0x3a1c5d0093de40c1…` block 59309310 | https://testnet.snowtrace.io/tx/0x3a1c5d0093de40c15deed22f9a568c0a1b2ad04f66f5ae084771583c69e45ac9 |
-| Pool-to-Pool root anchored (P2P-REHEARSAL-001, 12 buyers) | `0x54a4a46708d4bbdd…` block 59309318 | https://testnet.snowtrace.io/tx/0x54a4a46708d4bbdd641f9f4f14fb88c085f2af29d35295834f4d6caab4ec38e6 |
-| Dues remittance anchored | — next: first remittance marked remitted on staging — | |
+| App sends its first anchor (`TEST`) from the server wallet | block 59309304 | https://testnet.snowtrace.io/tx/0x41a6b23d19891b6fa92896242dbfd827c6b8707eeb36f0855ce4c57d23469e42 |
+| Ledger head anchored from the testnet UI (`tax` stream, event #96) | block 59309310 | https://testnet.snowtrace.io/tx/0x3a1c5d0093de40c15deed22f9a568c0a1b2ad04f66f5ae084771583c69e45ac9 |
+| Pool-to-Pool root anchored (P2P-REHEARSAL-001, 12 buyers) | block 59309318 | https://testnet.snowtrace.io/tx/0x54a4a46708d4bbdd641f9f4f14fb88c085f2af29d35295834f4d6caab4ec38e6 |
+| Dues remittance anchored | next: first remittance marked remitted on the testnet UI | |
 
 ## License
 
